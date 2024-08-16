@@ -57,8 +57,6 @@ class Interpreter(InterpreterBase):
         # variables
 
         for statement_node in statements:
-            print("statement node")
-            print(statement_node)
             temp_return_val = self.run_statement(statement_node, lambda_node)            
             if temp_return_val is not None:
                 return_value = temp_return_val
@@ -94,7 +92,7 @@ class Interpreter(InterpreterBase):
                 )
 
             # call run_func with statements or else_statements
-            if condition.v: # true
+            if condition.v: 
                 # new scope for block
                 self.variable_scope_list.append({})
                 self.variable_alias_list.append({})
@@ -111,12 +109,6 @@ class Interpreter(InterpreterBase):
                 updated_statement_node.dict['statements'] = statement_node.dict['else_statements']
                 return self.run_if_statements(updated_statement_node)
         elif statement_node.elem_type == "while":
-             # while the condition is true
-                # run the statements (Call run_func)
-                # if statement has a return value,
-                # then return was called within the loop
-                # that means we want to break out of our loop
-                # and return whatever that value was
             condition = self.evaluate_expression(statement_node.dict['condition'])
             if condition.type() == Type.INT:
                 condition = Value(Type.BOOL, self.get_bool_from_int(condition.v))
@@ -160,23 +152,12 @@ class Interpreter(InterpreterBase):
                         "While condition does not evaluate to a boolean",
                     )
 
-
         return None
 
     def do_assignment(self, statement_node, lambda_node = None):
         target_var_name = statement_node.dict['name']
-        print("target var name")
-        print(target_var_name)
-
-
         source_node = statement_node.dict['expression']
-        print("source node")
-        print(source_node)
-
-    
         resulting_value = self.evaluate_expression(source_node, lambda_node)
-        print("resulting val")
-        print(resulting_value)
 
         # if lambda value
         # then update value in the actual lambda
@@ -184,11 +165,6 @@ class Interpreter(InterpreterBase):
             captured_vars_dict = lambda_node[Interpreter.CAPTURED_VARS]
             if target_var_name in captured_vars_dict:
                 captured_vars_dict[target_var_name] = resulting_value
-
-                # if this is an object or lambda type
-                # then i want to update the actual value too
-                # this should have worked...?
-
                 return
                 
         # if the target var name has a . then we know it's an object
@@ -224,10 +200,7 @@ class Interpreter(InterpreterBase):
                         "Attempting to get field/method from non-object type",
                     )
                 
-                self.variable_scope_list[closest_scope_index][obj_name].v[field_name] = resulting_value
-                
-                # if this is obj references another obj, then we want to update that obj too...
-                
+                self.variable_scope_list[closest_scope_index][obj_name].v[field_name] = resulting_value                
                 return
 
         # check all scopes to see if variable exists
@@ -305,9 +278,7 @@ class Interpreter(InterpreterBase):
             var_name = source_node.dict['name']
 
             # see if lambda node
-            # this is supposed to be recognized as lambda!
             if lambda_node is not None:
-                print("LAMBDA RECOGNIZED IN EVAL EXPRESS")
                 # this should return the value from the lambda node dict
                 captured_vars_dict = lambda_node[Interpreter.CAPTURED_VARS]
                 for key, value in captured_vars_dict.items(): # name : value
@@ -319,10 +290,6 @@ class Interpreter(InterpreterBase):
                             if var_name == key2:
                                 return value2
 
-
-                # if var_name in captured_vars_dict:
-                #     return captured_vars_dict[var_name]
-                   
             # see if it is a function name
             functions_list = self.ast.dict['functions']
             if functions_list:
@@ -586,7 +553,6 @@ class Interpreter(InterpreterBase):
                     f"inputi() function found that takes > 1 parameter",
                     )
                 arg_value = self.evaluate_expression(source_node.dict['args'][0], lambda_node)
-                print("REAL OUTPUT v v v")
                 super().output(get_printable(arg_value)) 
         
             user_input = super().get_input()
@@ -608,7 +574,6 @@ class Interpreter(InterpreterBase):
                     f"inputs() function found that takes > 1 parameter",
                     )
                 arg_value = self.evaluate_expression(source_node.dict['args'][0], lambda_node)
-                print("REAL OUTPUT v v v")
                 super().output(get_printable(arg_value))
         
             user_input = super().get_input()
@@ -631,12 +596,6 @@ class Interpreter(InterpreterBase):
                 formal_param_name_list.append(arg.get('name'))
 
             # get list of all var names
-            
-            # source_node_string = str(source_node)
-
-            # print("SOURCE NODE STRING HERE v v v ")
-            # print(source_node_string)
-
             # * copy all vars in scope that aren't formal param
             captured_vars = {}
             # all variables in scope need to be captured
@@ -649,70 +608,12 @@ class Interpreter(InterpreterBase):
                         # (which effectively captures by reference)
                         if value.type() != Type.OBJ and value.type() != Type.LAMBDA:
                             captured_vars[key] = copy.deepcopy(value)
-                        # else:
-                        #     captured_vars[key] = copy.deepcopy(value)
                     
-
-           
-
-            # index_list = list(self.find_var_indices(source_node_string, '[var: name: '))
-            # variable_name_list = []
-            
-            # for index in index_list:
-            #     name = ""
-            #     inner_index = index + 12
-            #     while source_node_string[inner_index] != ']':
-            #         name += source_node_string[inner_index]
-            #         inner_index += 1
-
-            #     # IF IT IS VISIBLE in the program then it needs to be captured...
-            #     # e.g. in this scope or any of the others
-
-                # scope_index = self.validate_var_name(name, True)
-            #     if scope_index is not None:
-            #         variable_name_list.append(name)
-
-            # also need to add the names of function calls that are NOT
-            # in the functions list (and not formal param). these are lambdas which need to be captured
-            # index_list = list(self.find_var_indices(source_node_string, '[fcall: name: '))
-            # for index in index_list:
-            #     name = ""
-            #     inner_index = index + 14
-            #     while source_node_string[inner_index] != ',':
-            #         name += source_node_string[inner_index]
-            #         inner_index += 1
-
-            #     if name not in formal_param_name_list and name not in self.ast.dict['functions'] and name != 'print':
-            #         variable_name_list.append(name)
-
-            # print("variable name list")
-            # print(variable_name_list)
-            # print("formal param name list")
-            # print(formal_param_name_list)
-
-            # if there's a var that does not match formal parameters 
-            # then it must be captured
-            # -> go through scopes and get its value
-            # DEEP COPY its value and insert into the dict
-            # captured_vars = {} # var name : curr var value
-            # for var_name in variable_name_list:
-            #     if var_name not in formal_param_name_list:
-            #         scope_index = self.validate_var_name(var_name, True)
-            #         if scope_index is not None:
-            #             captured_value = self.variable_scope_list[scope_index][var_name]
-            #             captured_vars[var_name] = copy.deepcopy(captured_value)
-
-            print(captured_vars)
             final_lambda_struct = [source_node, captured_vars]
             return Value(Type.LAMBDA, final_lambda_struct)
-            # Value(Type.LAMBDA, [lambda_node, {var_names : curr_var_values}])
-
-           
 
             # the only values that can be captured are ones that are not in the formal params
             # the captured val must be a deep-copy
-
-
 
         super().error(
                 ErrorType.NAME_ERROR,
@@ -750,10 +651,7 @@ class Interpreter(InterpreterBase):
             final_output = ""
             for arg in statement_node.dict['args']:
                 arg_value = self.evaluate_expression(arg, outer_lambda_node)
-                # trying to print a lambda node!
-                # after --- 2
                 final_output += get_printable(arg_value)
-            print("REAL OUTPUT v v v")
             super().output(final_output)
             return Interpreter.NIL_VALUE
         
@@ -767,8 +665,6 @@ class Interpreter(InterpreterBase):
                     function_elem = elem
 
         lambda_node = None # INNER lambda node
-       
-
         object =  None
 
         # if it's mcall
@@ -776,10 +672,6 @@ class Interpreter(InterpreterBase):
             # get the function/lambda that it references and set it equal to function_elem
             # then, when processing function_elem later, make sure it has the objref in the "this" variable
             # and the proper values passed into the args
-            print("statement node 123")
-            print(statement_node)
-            print(statement_node.dict['objref'])
-            print(statement_node.dict['name'])
             obj_name = statement_node.dict['objref']
             method_name = statement_node.dict['name']
             scope_index = self.validate_var_name(obj_name)
@@ -792,28 +684,6 @@ class Interpreter(InterpreterBase):
                         ErrorType.TYPE_ERROR,
                         "Trying to call method on non-object",
                     )
-
-                # INSPO for altering below
-
-                # obj_fields_dict = self.variable_scope_list[closest_scope_index][obj_name].v
-                #     if field_name in obj_fields_dict:
-                #         return obj_fields_dict[field_name]
-                #     else:
-                #         # iterate through proto fields to see if the field ever exists
-                #         while (True):
-                #             if 'proto' in obj_fields_dict:
-                #                 obj = obj_fields_dict['proto']
-                #                 obj_fields_dict = obj.v
-                #                 if field_name in obj_fields_dict:
-                #                     return obj_fields_dict[field_name]
-                #             else:
-                #                 break
-
-                #         # attempting to get value that does not exist on this object
-                #         super().error(
-                #             ErrorType.NAME_ERROR,
-                #             "Field does not exist on this object",
-                #         )
 
                 obj_fields_dict = self.variable_scope_list[scope_index][obj_name].v
                 if method_name in obj_fields_dict:
@@ -842,15 +712,6 @@ class Interpreter(InterpreterBase):
                             "Method does not exist on this object",
                         )
 
-                # try:
-                #     var_value = self.variable_scope_list[scope_index][obj_name].v[method_name]
-                # except:
-                #     # attempting to get value that does not exist on this object
-                #     super().error(
-                #         ErrorType.NAME_ERROR,
-                #         "Method does not exist on this object",
-                #     )
-
                 if var_value.t == Type.FUNC:
                     updated_statement_node = var_value.v
                     # get new function elem
@@ -865,26 +726,11 @@ class Interpreter(InterpreterBase):
                                 else:
                                     function_elem = elem
 
-
-                # variable referring to an object is passed by reference
-                # e.g. obj.name 
-                # need to do special implementation for when lambdas originally capture variables
-                # and then update here ******
-                
-                # elif outer_lambda_node is not None and var_value.t == Type.LAMBDA and statement_node.dict['name'] in outer_lambda_node[Interpreter.CAPTURED_VARS]:
-                #     captured_vars_dict = outer_lambda_node[Interpreter.CAPTURED_VARS]
-                #     lambda_var_name = statement_node.dict['name']
-               
-                #     lambda_node = captured_vars_dict[lambda_var_name]
-                #     function_elem = lambda_node.v[Interpreter.LAMBDA_NODE]
                 elif var_value.t == Type.LAMBDA:
                     
                     function_elem = var_value.v[Interpreter.LAMBDA_NODE]
                     lambda_node = var_value.v
-                    print("HERE123")
-                    print("statement node")
-                    print(statement_node)
-
+             
                     if object is not None and len(function_elem.dict['args']) != len(statement_node.dict['args']):
                         super().error(
                             ErrorType.NAME_ERROR,
@@ -921,39 +767,24 @@ class Interpreter(InterpreterBase):
                                     )
                                 else:
                                     function_elem = elem
-                # CAPTURED VARIABLES TAKE PRECEDENCE OVER PASS BY REFERENCE
-                # INSIDE OF A LAMBDA?
+                # CAPTURED VARIABLES TAKE PRECEDENCE OVER PASS BY REFERENCE INSIDE OF A LAMBDA
                 # that is, if we update x which references y, if y is a captured variable,
                 # then we update the y variable outside of the lambda still
                 # BUT we reference the original y captured variable when inside the lambda
                 elif outer_lambda_node is not None and var_value.t == Type.LAMBDA and statement_node.dict['name'] in outer_lambda_node[Interpreter.CAPTURED_VARS]:
-                    # fix needed = the way i capture variables is only the ones that are assignedd
-                    # within the lambda
-                    # but i need to be capturing all (?) variables in the outer scope
-                    # possibly... lets investigate... ***
-
-
-
                      # if this is a lambda node within a lambda node
                     # e.g. var_value.t == Type.LAMBDA *AND* lambda_node is not none
                     # then we need to see if this var value is in the lambda node's captured values
                     # if so we need to reference the CAPTURED VALUE instead of the actual value in this moment
                     captured_vars_dict = outer_lambda_node[Interpreter.CAPTURED_VARS]
                     lambda_var_name = statement_node.dict['name']
-                    # if lambda_var_name in captured_vars_dict:
-
-
                     lambda_node = captured_vars_dict[lambda_var_name]
                     function_elem = lambda_node.v[Interpreter.LAMBDA_NODE]
-                        # passing in a list as my funct elem instead of a funct elem
                 elif var_value.t == Type.LAMBDA:
                     # the issue -> calling the lambda is always *the* lambda
                     # i need to call a copy of the lambda if it is not pass by reference
                     function_elem = var_value.v[Interpreter.LAMBDA_NODE]
                     lambda_node = var_value.v
-                    print("HERE123")
-                    print("statement node")
-                    print(statement_node)
 
                     if len(function_elem.dict['args']) != len(statement_node.dict['args']):
                         super().error(
@@ -975,11 +806,8 @@ class Interpreter(InterpreterBase):
             scope_index = len(self.variable_scope_list) - 1
 
             args_val_list = statement_node.dict['args']
-            print("statement node 55555")
-            print(statement_node)
             args_name_list = function_elem.dict['args']
-            print("function elem 555555")
-            print(function_elem)
+    
             for i in range(len(args_val_list)):
                 arg_val = self.evaluate_expression(args_val_list[i])
                 arg_name = args_name_list[i].get('name')
@@ -1013,108 +841,25 @@ class Interpreter(InterpreterBase):
 def main():
     interpreter = Interpreter(trace_output=True)
     
-
-    # should print 0 but its giving lambda
+    # sample program
     program = """
-func foo(ref x) {
-if (x.a > 9) {
-x.a = x.a - 1;
-print(x.a);
-foo(x);
-} else {
-print("reached the end!!!");
-}
-}
+    func foo(ref x) {
+    if (x.a > 9) {
+    x.a = x.a - 1;
+    print(x.a);
+    foo(x);
+    } else {
+    print("reached the end!!!");
+    }
+    }
 
-func main() {
- x = @;
- x.a = 12;
- foo(x);
- print(x.a);
-}
-"""
-# output 10, 20
-
-# now its 1 2 3 3 3
-# should be 1 2 3 4 4
-
-
-# 1
-
-# 2
-
-# func main() {
-#   b = true + 123;
-#   print(b);
-  
-#   b = 123 + true;
-#   print(b);
-  
-#   b = 123 + false;
-#   print(b);
-
-#   c = true + true;
-#   print(c);
-  
-#   d = false + true;
-#   print(d);
-# }
-
-
-
-
-
-
-
-    
-
-#    func cat(a) {
-#   print(a);
-# }
-
-# func foo() {
-
-#     print("I'm foo");
-# }
-
-# func main() {
-# 	x = cat;
-# 	x("what's upppp");
-#     foo();
-# }
-
-
-    #   func foo() { print("hi");}
-
-    #     func main() {
-    #     x = foo;                                  /* assigns x to function foo */
-    #     y = lambda() { print("I'm a lambda"); };  /* assigns y to a lambda */
-    #     }
-    
-        # func foo(ref a) {
-        # a = "abc";
-        # }
-
-        # func main() {
-        # b = 5;
-        # foo(b);
-        # print(b);  /* prints abc */
-        # }
-
-        #         func a(ref x) {
-        #     b(x);
-        # }
-
-        # func b(ref y) {
-        #     y = 10;
-        # }
-
-        # func main() {
-        #         z = 100;
-        #         a(z);
-        #         print(z);
-        #     } 
-        # prints 10!!!
+    func main() {
+    x = @;
+    x.a = 12;
+    foo(x);
+    print(x.a);
+    }
+    """
 
     interpreter.run(program)
 
